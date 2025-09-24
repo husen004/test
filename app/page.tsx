@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { XCircle, Send, ArrowUpCircle, Loader2, AlertCircle, CheckCircle } from 'lucide-react';
+import Image from 'next/image';
 
 interface Post {
   id: number;
@@ -32,7 +33,6 @@ export default function Home() {
     fetchPosts();
   }, []);
 
-  // moved outside so it can be reused for retry
   const fetchPosts = async () => {
     setIsLoading(true);
     setError(null);
@@ -52,11 +52,13 @@ export default function Home() {
       const data = await response.json();
       setPosts(data);
       setError(null);
-    } catch (err: any) {
-      if (err.name === 'AbortError') {
+    } catch (err: unknown) {
+      if (err instanceof DOMException && err.name === 'AbortError') {
         setError('Request timed out. Please try again.');
-      } else {
+      } else if (err instanceof Error) {
         setError(`Error fetching posts. ${err.message || 'Please try again later.'}`);
+      } else {
+        setError('Error fetching posts. Please try again later.');
       }
       console.error('fetchPosts error:', err);
     } finally {
@@ -359,9 +361,54 @@ export default function Home() {
                     </label>
                   </div>
                   {selectedFile && (
-                    <p className="mt-1 text-xs text-gray-500">
-                      File size: {(selectedFile.size / 1024).toFixed(2)} KB
-                    </p>
+                    <div className="mt-3">
+                      <p className="text-xs text-gray-500 mb-2">
+                        File size: {(selectedFile.size / 1024).toFixed(2)} KB
+                      </p>
+                      
+                      {/* File preview section */}
+                      <div className="border border-gray-200 rounded-md p-3 bg-gray-50">
+                        <p className="text-sm font-medium mb-2">Preview:</p>
+                        {selectedFile.type.startsWith('image/') ? (
+                          <div className="flex justify-center">
+                            <Image 
+                              src={URL.createObjectURL(selectedFile)} 
+                              alt={selectedFile.name}
+                              className="max-h-48 max-w-full object-contain rounded"
+                            />
+                          </div>
+                        ) : selectedFile.type === 'application/pdf' ? (
+                          <div className="flex items-center text-sm">
+                            <span className="bg-red-100 text-red-800 px-2 py-1 rounded mr-2">PDF</span>
+                            <span>{selectedFile.name}</span>
+                          </div>
+                        ) : selectedFile.type.includes('word') || selectedFile.type.includes('document') ? (
+                          <div className="flex items-center text-sm">
+                            <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded mr-2">DOC</span>
+                            <span>{selectedFile.name}</span>
+                          </div>
+                        ) : selectedFile.type.includes('spreadsheet') || selectedFile.type.includes('excel') ? (
+                          <div className="flex items-center text-sm">
+                            <span className="bg-green-100 text-green-800 px-2 py-1 rounded mr-2">XLS</span>
+                            <span>{selectedFile.name}</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center text-sm">
+                            <span className="bg-gray-100 text-gray-800 px-2 py-1 rounded mr-2">FILE</span>
+                            <span>{selectedFile.name}</span>
+                          </div>
+                        )}
+                      </div>
+                      
+                      <button
+                        type="button"
+                        onClick={() => setSelectedFile(null)}
+                        className="mt-2 text-xs text-red-500 hover:text-red-700 flex items-center"
+                      >
+                        <XCircle className="h-3 w-3 mr-1" />
+                        Remove file
+                      </button>
+                    </div>
                   )}
                 </div>
 
