@@ -29,25 +29,41 @@ export default function Home() {
   const [wsMessage, setWsMessage] = useState('');
 
   useEffect(() => {
-    const fetchPosts = async () => {
-      try {
-        const response = await fetch('https://jsonplaceholder.typicode.com/posts?_limit=5');
-        if (!response.ok) {
-          throw new Error('Failed to fetch posts');
-        }
-        const data = await response.json();
-        setPosts(data);
-        setError(null);
-      } catch (err) {
-        setError('Error fetching posts. Please try again later.');
-        console.error(err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchPosts();
   }, []);
+
+  // moved outside so it can be reused for retry
+  const fetchPosts = async () => {
+    setIsLoading(true);
+    setError(null);
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10000); // 10s timeout
+
+    try {
+      const response = await fetch('https://jsonplaceholder.typicode.com/posts?_limit=5', {
+        signal: controller.signal,
+      });
+
+      if (!response.ok) {
+        const text = await response.text().catch(() => '');
+        throw new Error(`HTTP ${response.status} ${response.statusText} ${text}`);
+      }
+
+      const data = await response.json();
+      setPosts(data);
+      setError(null);
+    } catch (err: any) {
+      if (err.name === 'AbortError') {
+        setError('Request timed out. Please try again.');
+      } else {
+        setError(`Error fetching posts. ${err.message || 'Please try again later.'}`);
+      }
+      console.error('fetchPosts error:', err);
+    } finally {
+      clearTimeout(timeout);
+      setIsLoading(false);
+    }
+  };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
