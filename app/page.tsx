@@ -125,7 +125,7 @@ export default function Home() {
         setIsModalOpen(false);
         setSubmitStatus('idle');
       }, 2000);
-    } catch (err) {
+    } catch (err: unknown) {
       console.error('Error submitting form:', err);
       setSubmitStatus('error');
     } finally {
@@ -186,7 +186,7 @@ export default function Home() {
         </motion.button>
       </div>
 
-      <section className="mb-10">API Integration Demo
+      <section className="mb-10">
         
         {isLoading ? (
           <div className="flex justify-center items-center h-40">
