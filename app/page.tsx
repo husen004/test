@@ -37,7 +37,7 @@ export default function Home() {
     setIsLoading(true);
     setError(null);
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 10000); // 10s timeout
+    const timeout = setTimeout(() => controller.abort(), 30000); // 30s timeout
 
     try {
       const response = await fetch('https://jsonplaceholder.typicode.com/posts?_limit=5', {
